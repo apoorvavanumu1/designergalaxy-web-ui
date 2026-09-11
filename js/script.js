@@ -17,6 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const sidebarToggleBtn = document.getElementById("sidebarToggleBtn");
   const sidebar = document.getElementById("sidebar");
   const sidebarOverlay = document.getElementById("sidebarOverlay");
+  const sidebarLinks = sidebar ? sidebar.querySelectorAll("a") : [];
 
   if (sidebarToggleBtn && sidebar && sidebarOverlay) {
     function openSidebar() {
@@ -25,6 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
       sidebarToggleBtn.classList.add("active");
       sidebarToggleBtn.setAttribute("aria-expanded", "true");
     }
+
     function closeSidebar() {
       sidebar.classList.remove("open");
       sidebarOverlay.classList.remove("show");
@@ -37,17 +39,24 @@ document.addEventListener("DOMContentLoaded", () => {
       sidebar.classList.contains("open") ? closeSidebar() : openSidebar();
     });
 
-    // close when a nav link is clicked
-    sidebar.querySelectorAll("a").forEach(link => {
-      link.addEventListener("click", closeSidebar);
+    sidebarLinks.forEach(link => {
+      link.addEventListener("click", () => {
+        if (window.innerWidth <= 768) {
+          closeSidebar();
+        }
+      });
     });
 
-    // close when clicking the overlay
     sidebarOverlay.addEventListener("click", closeSidebar);
 
-    // close on Escape key
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") closeSidebar();
+    });
+
+    window.addEventListener("resize", () => {
+      if (window.innerWidth > 768) {
+        closeSidebar();
+      }
     });
   }
 
