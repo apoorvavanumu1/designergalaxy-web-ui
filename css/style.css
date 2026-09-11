@@ -29,6 +29,9 @@
     --font-heading: 'Sora', sans-serif;
     --font-body: 'Inter', sans-serif;
     --container: 1200px;
+
+    /* Height of the horizontal mobile top bar (desktop uses the vertical rail) */
+    --topbar: 62px;
   }
   
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -138,7 +141,21 @@
   }
   .sidebar-logo-wrap:hover .sidebar-logo-img { transform: scale(1.08) rotate(-4deg); }
   .sidebar.open .sidebar-logo-wrap:hover .sidebar-logo-img { transform: scale(1.05) rotate(0deg); }
-  
+
+  /* Bar-only elements — the vertical rail never shows these */
+  .sidebar-wordmark { display: none; }
+  .nav-burger { display: none; }
+
+  /* Wraps nav + location text. On the desktop rail it just fills the leftover
+     height; on mobile the same box becomes the dropdown sheet. */
+  .sidebar-panel {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+  }
+
   /* Nav */
   .sidebar-nav {
     display: flex;
@@ -289,9 +306,16 @@
   .btn-arrow .arrow { transition: transform .25s ease; }
   .btn-arrow:hover .arrow { transform: translateX(4px); }
   
-  /* Illustration frame with corner marks */
+  /* Illustration frame with corner marks.
+     The panel holds its own aspect ratio so the hero never reflows while the
+     logo loads, and the mark is contained + padded rather than cropped. */
+  .hero-image { will-change: transform; }
   .hero-image-frame {
     position: relative;
+    aspect-ratio: 5 / 4;
+    display: grid;
+    place-items: center;
+    padding: clamp(26px, 4.5vw, 56px);
     border-radius: 18px;
     overflow: hidden;
     background: linear-gradient(135deg,
@@ -301,18 +325,96 @@
     background-size: 220% 220%;
     animation: bandDrift 20s ease-in-out infinite;
   }
-  .hero-image-frame img { width: 867% ; height: 490% ; display: block; object-fit: cover; }
-  .hero-image-frame::before,
-  .hero-image-frame::after,
-  .hero-image-frame span::before,
-  .hero-image-frame span::after { content: none; }
-  
+  .hero-image-frame img {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: contain;
+    filter: drop-shadow(0 14px 30px rgba(16, 34, 42, 0.18));
+  }
+
+  /* ---- Animated backdrop, built only from the site palette ----
+     Three drifting orbs (mint / teal / teal-deep), a slow rotating conic
+     sweep in powder + moonstone, and a crawling artboard grid on top. */
+  .hero-frame-aura {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(38% 38% at 22% 26%, rgba(170, 240, 209, 0.85), transparent 70%),
+      radial-gradient(42% 42% at 79% 21%, rgba(54, 117, 136, 0.55), transparent 72%),
+      radial-gradient(50% 50% at 62% 84%, rgba(31, 79, 93, 0.42), transparent 74%);
+    filter: blur(5px);
+    animation: auraDrift 18s ease-in-out infinite alternate;
+  }
+  .hero-frame-aura::before {
+    content: "";
+    position: absolute;
+    inset: -32%;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg,
+      rgba(176, 224, 230, 0) 0deg,
+      rgba(176, 224, 230, 0.6) 66deg,
+      rgba(170, 240, 209, 0) 150deg,
+      rgba(115, 169, 194, 0.55) 248deg,
+      rgba(176, 224, 230, 0) 360deg);
+    mix-blend-mode: screen;
+    opacity: .55;
+    animation: auraSpin 26s linear infinite;
+  }
+  .hero-frame-aura::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(16, 34, 42, 0.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(16, 34, 42, 0.07) 1px, transparent 1px);
+    background-size: 34px 34px;
+    animation: auraGrid 22s linear infinite;
+  }
+  @keyframes auraDrift {
+    0%   { transform: scale(1) translate(0, 0); }
+    50%  { transform: scale(1.12) translate(-3%, 2%); }
+    100% { transform: scale(1.05) translate(3%, -2%); }
+  }
+  @keyframes auraSpin { to { transform: rotate(360deg); } }
+  @keyframes auraGrid {
+    from { background-position: 0 0, 0 0; }
+    to   { background-position: 34px 34px, 34px 34px; }
+  }
+
+  /* Monogram stand-in, revealed by script.js only when logo.png is missing */
+  .hero-logo-fallback { display: none; }
+  .hero-image-frame.logo-missing img { display: none; }
+  .hero-image-frame.logo-missing .hero-logo-fallback {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: clamp(116px, 20vw, 180px);
+    aspect-ratio: 1;
+    border-radius: 28px;
+    background: linear-gradient(150deg, #3f8496, var(--teal-deep));
+    color: #fff;
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: clamp(44px, 7vw, 70px);
+    letter-spacing: -2px;
+    line-height: 1;
+    box-shadow: 0 22px 50px rgba(16, 34, 42, 0.3);
+  }
+
   .hero-image-frame {
     --corner: 22px;
   }
+  /* z-index keeps the register marks on top of the animated aura */
   .hero-image-frame::before {
     content: "";
     position: absolute;
+    z-index: 2;
     top: 14px; left: 14px;
     width: var(--corner); height: var(--corner);
     border-top: 2px solid var(--dark);
@@ -322,6 +424,7 @@
   .hero-image-frame::after {
     content: "";
     position: absolute;
+    z-index: 2;
     bottom: 14px; right: 14px;
     width: var(--corner); height: var(--corner);
     border-bottom: 2px solid var(--dark);
@@ -1021,10 +1124,14 @@
   .hero-grid, .hero .container { position: relative; z-index: 1; }
   
   /* =============== HERO IMAGE FLOAT + PARALLAX =============== */
+  /* Two layers on purpose: the frame owns the idle float keyframes, the wrapper
+     owns the JS pointer parallax. Putting both on one element made the
+     animation win the cascade and the parallax silently do nothing. */
   .hero-image-frame {
     animation: floatImg 5s ease-in-out infinite;
     will-change: transform;
   }
+  .hero-image { transition: transform .3s cubic-bezier(.2,.8,.2,1); }
   @keyframes floatImg {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-14px); }
@@ -1087,11 +1194,16 @@
     .hero::before, .hero::after, .hero-image img, .whatsapp-float, .skills span, .loader-ring {
       animation: none !important;
     }
+    .hero-image, .nav-burger span { transition: none !important; }
+    .hero-image { transform: none !important; }
     .reveal, .reveal-left, .reveal-right, .reveal-scale, .portfolio-item {
       transition: none !important; opacity: 1 !important; transform: none !important;
     }
+    /* skillIn supplied the final opacity, so killing it would hide the chips */
+    .skills span { opacity: 1 !important; transform: none !important; }
     .marquee-track, .stat-status .status-dot { animation: none !important; }
-    .stats, #clients, footer, .status-pill, .btn-whatsapp, .hero-image-frame {
+    .stats, #clients, footer, .status-pill, .btn-whatsapp, .hero-image-frame,
+    .hero-frame-aura, .hero-frame-aura::before, .hero-frame-aura::after {
       animation: none !important;
     }
     .marquee-row { overflow-x: auto; }
@@ -1104,7 +1216,6 @@
   /* ---- Large monitors / ultra-wide ---- */
   @media (min-width: 1440px) {
     :root { --container: 1320px; }
-    .hero-image img { height: 620px; }
   }
   
   /* ---- Laptops / small desktops ---- */
@@ -1127,40 +1238,61 @@
   /* ---- Tablets (portrait) / large phones ---- */
   @media (max-width: 900px) {
     .hero-grid { grid-template-columns: 1fr; min-height: auto; gap: 40px; }
-    .hero { padding-top: 90px; }
-    .hero-image { order: -1; }
-    .hero-image img { height: 380px; }
+    .hero { padding-top: 50px; }
+    /* Stacked order is heading -> copy -> buttons -> logo panel (source order),
+       so the logo sits AFTER "LOCAL IDEAS TO BRAND", never above it. */
+    .hero-image { order: 0; }
+    .hero-image-frame { aspect-ratio: 16 / 11; max-width: 520px; margin: 0 auto; }
     .story-grid { grid-template-columns: 1fr; gap: 30px; }
     .story-image img { height: 360px; }
     .contact-grid { grid-template-columns: 1fr; gap: 40px; }
+
+    /* A scroll box inside a scrolling page is awkward on touch — let it flow */
+    .roadmap-vertical {
+      max-height: none;
+      overflow: visible;
+      padding-right: 0;
+      gap: 28px;
+    }
   }
   
   @media (max-width: 768px) {
     section { padding: 70px 0; }
   
-    .hero { padding-top: 40px; }
-  
+    .hero { padding-top: 34px; }
+
     .hero-grid { grid-template-columns: 1fr; min-height: auto; gap: 32px; }
-    .hero-image img { height: 320px; }
-  
-    .roadmap-item { flex: 0 0 150px; }
-  
+    .hero-image-frame { aspect-ratio: 4 / 3; padding: 30px; }
+
     .designer-heading { flex-direction: column; align-items: flex-start; }
     .designer-tagline { text-align: left; }
     .designer-meta { gap: 26px; }
   
-    .stats-grid { grid-template-columns: 1fr; gap: 30px; }
-    .stat-item + .stat-item { border-left: 0; }
+    /* Two-up reads far better than a tall single column on a phone.
+       Dividers are cleared in the MOBILE STATS block at the end of this file,
+       which has to come after the later `.stats .stat-item + .stat-item` rule. */
+    .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 28px 14px; }
+    .stat-item p { font-size: 13.5px; }
+
     .service-row {
-      grid-template-columns: 34px 1fr;
+      grid-template-columns: 38px 1fr;
       grid-template-areas:
         "icon title"
         "desc desc";
+      column-gap: 16px;
       row-gap: 8px;
       padding: 22px 16px;
     }
     .service-num { display: none; }
-    .service-icon { grid-area: icon; align-self: start; }
+    /* Must match the 38px track or the disc pushes into the heading */
+    .service-icon {
+      grid-area: icon;
+      align-self: start;
+      width: 38px;
+      height: 38px;
+      font-size: 18px;
+    }
+    .service-text h3 { font-size: 18px; }
     .service-text { grid-area: title; }
     .service-text p { grid-area: desc; max-width: 100%; }
     .service-arrow { display: none; }
@@ -1170,13 +1302,32 @@
     .team-panel { height: 90px; flex: none; }
     .team-panel.active { height: 340px; }
     .team-panel-avatar { display: none; }
-    .portfolio-grid { grid-template-columns: 1fr; }
+    .portfolio-grid { grid-template-columns: 1fr; gap: 16px; }
+    .portfolio-item img { height: 270px; }
     .marquee-logo { width: 140px; height: 86px; margin-right: 14px; }
-    .reviews-grid { grid-template-columns: 1fr; }
+    .marquee-track { animation-duration: 28s; }
+    .reviews-grid { grid-template-columns: 1fr; gap: 16px; }
+    .review-card { padding: 24px; }
     .footer-grid { grid-template-columns: 1fr; gap: 25px; }
-  
-    .back-to-top { right: 20px; bottom: 88px; width: 42px; height: 42px; }
-    .whatsapp-float { width: 50px; height: 50px; font-size: 22px; bottom: 20px; right: 20px; }
+
+    h2.center { margin-bottom: 40px; }
+    .designer-content { padding: 32px 22px; }
+    .designer-quote { padding-left: 16px; font-size: 14.5px; margin-bottom: 26px; }
+    .designer-meta { gap: 22px 26px; padding-top: 22px; }
+    .contact-form textarea { height: 130px; }
+    .map-embed iframe { height: 200px; }
+
+    /* Keep the floating actions clear of the home-bar / rounded corners */
+    .back-to-top {
+      width: 44px; height: 44px;
+      right: calc(18px + env(safe-area-inset-right));
+      bottom: calc(84px + env(safe-area-inset-bottom));
+    }
+    .whatsapp-float {
+      width: 52px; height: 52px; font-size: 22px;
+      right: calc(18px + env(safe-area-inset-right));
+      bottom: calc(20px + env(safe-area-inset-bottom));
+    }
   }
   
   /* ---- Small phones ---- */
@@ -1184,150 +1335,269 @@
     .container { padding: 0 5%; }
     section { padding: 56px 0; }
   
-    .hero h1 { font-size: clamp(28px, 8vw, 40px); letter-spacing: -0.5px; }
-    .hero-desc { max-width: 100%; }
+    /* The size lives on the heading spans, not on the h1 itself */
+    .hero-heading span { font-size: clamp(30px, 11vw, 46px); letter-spacing: -1px; }
+    .hero-desc { max-width: 100%; font-size: 15px; }
     .hero-buttons { flex-direction: column; align-items: stretch; }
-    .hero-buttons .btn { text-align: center; }
-    .hero-image img { height: 240px; }
-  
+    .hero-buttons .btn { text-align: center; padding: 15px 24px; }
+    .hero-buttons .btn-arrow { justify-content: center; }
+    .hero-image-frame { aspect-ratio: 1 / 1; padding: 26px; max-width: 340px; }
+    .eyebrow { font-size: 11.5px; letter-spacing: 1.5px; }
+    /* The rule-line strands itself once the label wraps to two lines */
+    .eyebrow-line::after { display: none; }
+
     .stat-item strong { font-size: clamp(30px, 10vw, 44px); }
-  
+
     .marquee-logo { width: 124px; height: 78px; margin-right: 12px; padding: 10px; }
     .stat-status .status-text { font-size: 11px; letter-spacing: 1.5px; }
-  
-    .filter-buttons { gap: 8px; }
-    .filter-buttons button { padding: 8px 16px; font-size: 13px; }
-  
-    .contact-form input, .contact-form textarea { padding: 14px; font-size: 14px; }
-  
+
+    /* All four chips have to fit one row inside a 360–390px screen */
+    .filter-buttons { gap: 7px; margin-bottom: 28px; }
+    .filter-buttons button { padding: 8px 13px; font-size: 12.5px; }
+
+    /* 16px keeps iOS Safari from zooming the page in on focus */
+    .contact-form input, .contact-form textarea { padding: 14px; font-size: 16px; }
+    .contact-details li { padding: 7px 0; font-size: 14.5px; }
+
     .logo { font-size: 17px; }
-    .sidebar-logo-img { width: 38px; height: 38px; }
-  
+    .portfolio-item img { height: 240px; }
+    .team-panel { height: 78px; }
+    .team-panel.active { height: 300px; }
+    .team-panel-info h4 { font-size: 19px; }
+
     .footer-grid { text-align: center; }
     .footer-links, .footer-social { align-items: center; }
-  
-    .back-to-top { bottom: 80px; right: 16px; }
-    .whatsapp-float { right: 16px; bottom: 16px; }
+
+    .back-to-top { bottom: calc(78px + env(safe-area-inset-bottom)); right: calc(15px + env(safe-area-inset-right)); }
+    .whatsapp-float { right: calc(15px + env(safe-area-inset-right)); bottom: calc(16px + env(safe-area-inset-bottom)); }
   }
   
   /* ---- Very small phones ---- */
   @media (max-width: 360px) {
     .marquee-logo { width: 108px; height: 70px; }
+    .hero-heading span { font-size: clamp(28px, 10.5vw, 38px); }
+    .sidebar-wordmark { font-size: 12.5px; }
+    .stats-grid { gap: 22px 10px; }
   }
-  
+
   /* ---- Touch devices: disable hover-only heavy effects, ensure tap targets ---- */
   @media (hover: none) {
     .service-row, .review-card { transform: none !important; }
     .btn { transform: none !important; }
+    .hero-image { transform: none !important; }
+    .service-row:hover { padding-left: 20px; }
+
+    /* Anything that only appeared on :hover has no trigger on a phone,
+       so the labels are shown up front instead of being unreachable. */
+    .portfolio-item .overlay {
+      transform: translateY(0);
+      background: linear-gradient(transparent, rgba(0,0,0,0.8));
+    }
+    .map-overlay { opacity: 1; transform: translateY(0); }
+    .marquee-logo:hover { transform: none; box-shadow: none; border-color: var(--border); }
   }
 
 /* =========================================================
-   MOBILE SIDEBAR — OFF CANVAS NAVIGATION
+   MOBILE NAV — HORIZONTAL TOP BAR + DROPDOWN SHEET
+   The desktop vertical rail is left untouched; below 768px the same markup
+   re-flows into a horizontal bar so the nav stops eating screen width.
    ========================================================= */
 
 @media (max-width: 768px) {
 
+  /* ---- The rail lies down and becomes a top bar ---- */
   .sidebar {
     position: fixed;
     top: 0;
     left: 0;
-    bottom: 0;
+    right: 0;
+    bottom: auto;
 
-    width: 64px;
-    max-width: 64px;
+    width: 100%;
+    max-width: none;
+    height: var(--topbar);
 
-    padding-top: 20px;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    padding: 0 16px;
 
-    overflow: visible;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+    background: transparent;
 
     z-index: 1050;
+    transition: box-shadow .3s ease;
+  }
 
-    transition:
-      width 0.4s cubic-bezier(.4, 0, .2, 1),
-      max-width 0.4s cubic-bezier(.4, 0, .2, 1),
-      box-shadow 0.4s ease;
+  /* The frosted ground sits on a pseudo-element on purpose: backdrop-filter on
+     .sidebar itself would turn it into the containing block for the
+     position:fixed dropdown sheet below. */
+  .sidebar::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: rgba(245, 245, 245, 0.9);
+    -webkit-backdrop-filter: blur(14px) saturate(1.25);
+            backdrop-filter: blur(14px) saturate(1.25);
   }
 
   .sidebar.open {
-    width: min(280px, 82vw);
-    max-width: 280px;
-
-    align-items: stretch;
-
-    box-shadow: 8px 0 40px rgba(0, 0, 0, 0.18);
+    width: 100%;
+    max-width: none;
+    align-items: center;
+    box-shadow: 0 8px 26px rgba(16, 34, 42, 0.10);
   }
 
+  /* ---- Brand block, left of the bar ---- */
+  .sidebar-logo-wrap {
+    width: auto;
+    min-width: 0;
+    padding: 0;
+    gap: 11px;
+    justify-content: flex-start;
+  }
+  .sidebar.open .sidebar-logo-wrap {
+    justify-content: flex-start;
+    padding: 0;
+  }
+  .sidebar-logo-img {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+  }
+  .sidebar-logo-wrap:hover .sidebar-logo-img,
+  .sidebar.open .sidebar-logo-wrap:hover .sidebar-logo-img { transform: none; }
+
+  .sidebar-wordmark {
+    display: block;
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 13.5px;
+    letter-spacing: .5px;
+    line-height: 1;
+    color: var(--dark);
+    white-space: nowrap;
+  }
+  .sidebar-wordmark span { color: var(--accent); }
+
+  /* ---- Hamburger, right of the bar ---- */
+  .nav-burger {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+
+    width: 44px;
+    height: 44px;
+    padding: 0 9px;
+    margin-left: auto;
+    flex-shrink: 0;
+
+    background: none;
+    border: 0;
+    border-radius: 12px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .nav-burger span {
+    display: block;
+    width: 100%;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--dark);
+    transition: transform .3s cubic-bezier(.4,0,.2,1), opacity .2s ease, background .3s ease;
+  }
+  .sidebar.open .nav-burger span { background: var(--accent); }
+  .sidebar.open .nav-burger span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .sidebar.open .nav-burger span:nth-child(2) { opacity: 0; transform: scaleX(.3); }
+  .sidebar.open .nav-burger span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+  /* ---- The nav + location text drop down as one sheet ---- */
+  .sidebar-panel {
+    position: fixed;
+    top: var(--topbar);
+    left: 0;
+    right: 0;
+
+    flex: none;
+    width: 100%;
+    max-height: calc(100vh - var(--topbar));
+    max-height: calc(100dvh - var(--topbar));
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+
+    padding-bottom: 8px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 22px 44px rgba(16, 34, 42, 0.14);
+
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-12px);
+    transition: opacity .26s ease,
+                transform .32s cubic-bezier(.4,0,.2,1),
+                visibility .26s ease;
+  }
+  .sidebar.open .sidebar-panel {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+
+  .sidebar-nav { gap: 0; padding: 0; }
+  .sidebar-nav a {
+    gap: 14px;
+    padding: 14px 22px;
+    min-height: 52px;
+    border-bottom: 1px solid rgba(169, 196, 205, 0.26);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .sidebar-nav a:last-child { border-bottom: 0; }
+  .sidebar-nav a.active { background: var(--accent-tint); }
+
+  /* Inside the sheet the labels are the nav — always visible */
+  .nav-label,
+  .sidebar.open .nav-label {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+    font-size: 13px;
+    letter-spacing: 1.4px;
+    white-space: nowrap;
+  }
+
+  .sidebar-bottom,
+  .sidebar.open .sidebar-bottom {
+    align-items: flex-start;
+    padding: 15px 22px 6px;
+    border-top: 1px solid rgba(169, 196, 205, 0.26);
+  }
+  .sidebar-location,
+  .sidebar.open .sidebar-location {
+    writing-mode: horizontal-tb;
+    font-size: 11px;
+    letter-spacing: 1.6px;
+    white-space: nowrap;
+  }
+
+  /* ---- Page content clears the bar instead of sitting beside a rail ---- */
   main,
-  footer {
-    margin-left: 0;
-  }
-
+  footer,
   .sidebar.open ~ main,
   .sidebar.open ~ footer {
     margin-left: 0;
   }
+  main { padding-top: var(--topbar); }
 
-  .sidebar-logo-wrap {
-    padding: 0 13px 22px;
-    justify-content: center;
-  }
-
-  .sidebar.open .sidebar-logo-wrap {
-    justify-content: flex-start;
-    padding-left: 20px;
-  }
-
-  .sidebar-logo-img {
-    width: 38px;
-    height: 38px;
-  }
-
-  .sidebar-nav {
-    gap: 24px;
-    padding-top: 6px;
-  }
-
-  .sidebar-nav a {
-    padding: 0 22px;
-    gap: 14px;
-  }
-
-  .nav-label {
-    opacity: 0;
-    transform: translateX(-8px);
-    pointer-events: none;
-    white-space: nowrap;
-  }
-
-  .sidebar.open .nav-label {
-    opacity: 1;
-    transform: translateX(0);
-    pointer-events: auto;
-  }
-
-  .sidebar-bottom {
-    padding-top: 20px;
-    padding-bottom: 14px;
-  }
-
-  .sidebar.open .sidebar-bottom {
-    align-items: flex-start;
-    padding-left: 22px;
-  }
-
-  .sidebar-location {
-    font-size: 10px;
-  }
-
-  .sidebar.open .sidebar-location {
-    font-size: 11px;
-    white-space: normal;
-  }
+  /* Anchor jumps must not land underneath the fixed bar */
+  section { scroll-margin-top: calc(var(--topbar) + 8px); }
 
   .sidebar-overlay {
+    top: var(--topbar);
     z-index: 1040;
   }
-
   .sidebar-overlay.show {
     opacity: 1;
     visibility: visible;
@@ -1335,48 +1605,25 @@
 }
 
 @media (max-width: 480px) {
-
-  .sidebar {
-    width: 60px;
-    max-width: 60px;
-  }
-
-  .sidebar.open {
-    width: min(280px, 84vw);
-    max-width: 280px;
-  }
-
-  main,
-  footer,
-  .sidebar.open ~ main,
-  .sidebar.open ~ footer {
-    margin-left: 0;
-  }
-
-  .sidebar-nav {
-    gap: 22px;
-  }
-
-  .sidebar-nav a {
-    padding-left: 19px;
-    padding-right: 19px;
-  }
-
-  .sidebar-logo-wrap {
-    padding-left: 10px;
-    padding-right: 10px;
-  }
-
-  .sidebar.open .sidebar-logo-wrap {
-    padding-left: 20px;
-  }
+  .sidebar { padding: 0 13px; gap: 10px; }
+  .sidebar-logo-img { width: 34px; height: 34px; }
+  .sidebar-nav a { padding: 13px 19px; min-height: 50px; }
+  .sidebar-bottom,
+  .sidebar.open .sidebar-bottom { padding-left: 19px; padding-right: 19px; }
 }
   
   /* ---- Landscape phones (short viewport height) ---- */
   @media (max-height: 480px) and (orientation: landscape) {
-    .hero { padding-top: 60px; }
+    .hero { padding-top: 30px; }
     .hero-grid { min-height: auto; }
     section { padding: 50px 0; }
+    .hero-image-frame { max-width: 380px; }
+  }
+
+  /* Page must not scroll behind the open mobile sheet */
+  body.nav-open { overflow: hidden; }
+  @media (min-width: 769px) {
+    body.nav-open { overflow: visible; }
   }
 
 /* =========================================================
@@ -1475,6 +1722,26 @@
   .stats .status-pill .status-text {
     font-size: 10px;
     letter-spacing: 1.4px;
+  }
+}
+
+/* =========================================================
+   MOBILE STATS — clear the column dividers
+   Deliberately the last stats rule in the file: the two-up phone grid wraps,
+   so `+ .stat-item` dividers land in arbitrary places rather than between
+   columns. Whitespace does the separating instead.
+   ========================================================= */
+@media (max-width: 768px) {
+  .stats .stat-item + .stat-item,
+  .stat-item + .stat-item {
+    border-left: 0;
+  }
+  .stats .stat-status,
+  .stat-status {
+    grid-column: 1 / -1;
+    padding: 0;
+    border-left: 0;
+    justify-content: center;
   }
 }
   
