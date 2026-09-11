@@ -27,25 +27,34 @@
 
 <!-- ============ VERTICAL SIDEBAR (toggle open/close) ============ -->
 <aside class="sidebar" id="sidebar">
-  <button class="sidebar-logo-wrap" id="sidebarToggleBtn" aria-expanded="false" aria-label="Toggle navigation menu">
+  <button class="sidebar-logo-wrap" id="sidebarToggleBtn" aria-expanded="false" aria-label="Toggle navigation menu" aria-controls="sidebarPanel">
     <img src="https://placehold.co/64x64/367588/111111?text=DG" alt="Designer Galaxy logo" class="sidebar-logo-img" />
+    <span class="sidebar-wordmark">DESIGNER<span>GALAXY</span></span>
   </button>
 
-  <nav class="sidebar-nav">
-    <a href="#home" class="active"><span class="nav-line"></span><span class="nav-label">Home</span></a>
-    <a href="#story"><span class="nav-line"></span><span class="nav-label">Our Story</span></a>
-    <a href="#services"><span class="nav-line"></span><span class="nav-label">Services</span></a>
-    <a href="#designer"><span class="nav-line"></span><span class="nav-label">Designer</span></a>
-    <a href="#team"><span class="nav-line"></span><span class="nav-label">Our Team</span></a>
-    <a href="#portfolio"><span class="nav-line"></span><span class="nav-label">Showcase</span></a>
-    <a href="#clients"><span class="nav-line"></span><span class="nav-label">Clients</span></a>
-    <a href="#reviews"><span class="nav-line"></span><span class="nav-label">Reviews</span></a>
-    <a href="#contact"><span class="nav-line"></span><span class="nav-label">Contact</span></a>
-  </nav>
+  <!-- Hamburger — only rendered on the horizontal mobile bar -->
+  <button class="nav-burger" id="navBurger" aria-expanded="false" aria-label="Toggle navigation menu" aria-controls="sidebarPanel">
+    <span></span><span></span><span></span>
+  </button>
 
-  <div class="sidebar-bottom">
-    <span class="sidebar-circle"></span>
-    <span class="sidebar-location">KAKINADA &middot; HYD &middot; IND</span>
+  <!-- Desktop: fills the vertical rail. Mobile: drops down under the top bar. -->
+  <div class="sidebar-panel" id="sidebarPanel">
+    <nav class="sidebar-nav">
+      <a href="#home" class="active"><span class="nav-line"></span><span class="nav-label">Home</span></a>
+      <a href="#story"><span class="nav-line"></span><span class="nav-label">Our Story</span></a>
+      <a href="#services"><span class="nav-line"></span><span class="nav-label">Services</span></a>
+      <a href="#designer"><span class="nav-line"></span><span class="nav-label">Designer</span></a>
+      <a href="#team"><span class="nav-line"></span><span class="nav-label">Our Team</span></a>
+      <a href="#portfolio"><span class="nav-line"></span><span class="nav-label">Showcase</span></a>
+      <a href="#clients"><span class="nav-line"></span><span class="nav-label">Clients</span></a>
+      <a href="#reviews"><span class="nav-line"></span><span class="nav-label">Reviews</span></a>
+      <a href="#contact"><span class="nav-line"></span><span class="nav-label">Contact</span></a>
+    </nav>
+
+    <div class="sidebar-bottom">
+      <span class="sidebar-circle"></span>
+      <span class="sidebar-location">KAKINADA &middot; HYD &middot; IND</span>
+    </div>
   </div>
 </aside>
 
@@ -73,8 +82,13 @@
         </div>
       </div>
       <div class="hero-image reveal">
-        <div class="hero-image-frame">
-          <img src= "./logo.png" alt="Designer Galaxy Logo" class="hero-brand-logo" />
+        <div class="hero-image-frame" id="heroFrame">
+          <!-- Animated brand-palette backdrop (teal / powder / mint / moonstone) -->
+          <span class="hero-frame-aura" aria-hidden="true"></span>
+          <img src="./logo.png" alt="Designer Galaxy logo" class="hero-brand-logo" />
+          <!-- Shown by script.js only if logo.png is missing, so the panel never
+               renders a broken-image icon. -->
+          <span class="hero-logo-fallback" aria-hidden="true">DG</span>
         </div>
       </div>
     </div>
@@ -294,7 +308,7 @@
     </div>
   </section>
   <!-- ============ Managing partner ============ -->
-  <section id="designer">
+  <section id="partner">
     <div class="container">
       <div class="designer-heading reveal">
         <div class="designer-heading-text">
@@ -599,3 +613,5 @@
 <script src="js/script.js"></script>
 </body>
 </html>
+index.html
+

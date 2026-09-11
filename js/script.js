@@ -7,57 +7,106 @@
 
 document.addEventListener("DOMContentLoaded", () => {
 
-  /* ---------- Preloader ---------- */
+  /* ---------- Preloader ----------
+     `load` waits on every remote image, so on a slow or offline connection the
+     page would sit behind the dark veil. The timeout is a hard ceiling. */
   const preloader = document.getElementById("preloader");
-  window.addEventListener("load", () => {
-    setTimeout(() => preloader && preloader.classList.add("loaded"), 300);
-  });
+  let preloaderDone = false;
 
-  /* ---------- Vertical Sidebar Toggle ---------- */
-  const sidebarToggleBtn = document.getElementById("sidebarToggleBtn");
+  function hidePreloader() {
+    if (preloaderDone || !preloader) return;
+    preloaderDone = true;
+    preloader.classList.add("loaded");
+  }
+
+  window.addEventListener("load", () => setTimeout(hidePreloader, 300));
+  setTimeout(hidePreloader, 2500);
+
+  /* ---------- Navigation ----------
+     Same markup, two shapes: a vertical rail on desktop, a horizontal top bar
+     with a dropdown sheet below 768px. Both toggles drive the one `.open` state. */
   const sidebar = document.getElementById("sidebar");
   const sidebarOverlay = document.getElementById("sidebarOverlay");
-  const sidebarLinks = sidebar ? sidebar.querySelectorAll("a") : [];
+  const navToggles = [
+    document.getElementById("sidebarToggleBtn"),
+    document.getElementById("navBurger")
+  ].filter(Boolean);
+  const sidebarLinks = sidebar ? Array.from(sidebar.querySelectorAll(".sidebar-nav a")) : [];
+  const isMobileNav = () => window.innerWidth <= 768;
 
-  if (sidebarToggleBtn && sidebar && sidebarOverlay) {
-    function openSidebar() {
+  // No-op placeholder so link/keyboard handlers below are always safe to call
+  let closeSidebar = () => {};
+
+  if (sidebar && sidebarOverlay && navToggles.length) {
+    const setExpanded = (state) => {
+      navToggles.forEach(btn => {
+        btn.setAttribute("aria-expanded", String(state));
+        btn.classList.toggle("active", state);
+      });
+    };
+
+    const openSidebar = () => {
       sidebar.classList.add("open");
       sidebarOverlay.classList.add("show");
-      sidebarToggleBtn.classList.add("active");
-      sidebarToggleBtn.setAttribute("aria-expanded", "true");
-    }
+      setExpanded(true);
+      // Only the mobile sheet covers the page, so only it locks scrolling
+      if (isMobileNav()) document.body.classList.add("nav-open");
+    };
 
-    function closeSidebar() {
+    closeSidebar = () => {
       sidebar.classList.remove("open");
       sidebarOverlay.classList.remove("show");
-      sidebarToggleBtn.classList.remove("active");
-      sidebarToggleBtn.setAttribute("aria-expanded", "false");
-    }
+      setExpanded(false);
+      document.body.classList.remove("nav-open");
+    };
 
-    sidebarToggleBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      sidebar.classList.contains("open") ? closeSidebar() : openSidebar();
-    });
-
-    sidebarLinks.forEach(link => {
-      link.addEventListener("click", () => {
-        if (window.innerWidth <= 768) {
-          closeSidebar();
-        }
+    navToggles.forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        sidebar.classList.contains("open") ? closeSidebar() : openSidebar();
       });
     });
 
-    sidebarOverlay.addEventListener("click", closeSidebar);
+    sidebarLinks.forEach(link => link.addEventListener("click", () => closeSidebar()));
+
+    sidebarOverlay.addEventListener("click", () => closeSidebar());
 
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") closeSidebar();
     });
 
+    // Close only when the layout actually switches shape — a plain resize also
+    // fires when a mobile browser's URL bar collapses, which must not shut the menu.
+    let wasMobile = isMobileNav();
     window.addEventListener("resize", () => {
-      if (window.innerWidth > 768) {
+      if (isMobileNav() !== wasMobile) {
+        wasMobile = isMobileNav();
         closeSidebar();
       }
     });
+  }
+
+  /* ---------- Nav active state follows the scroll position ---------- */
+  const navTargets = sidebarLinks
+    .map(link => {
+      const id = link.getAttribute("href") || "";
+      return { link, section: id.startsWith("#") ? document.querySelector(id) : null };
+    })
+    .filter(item => item.section);
+
+  function syncActiveNav() {
+    if (!navTargets.length) return;
+    const offset = (isMobileNav() ? 70 : 0) + window.innerHeight * 0.28;
+    let current = navTargets[0];
+
+    navTargets.forEach(item => {
+      if (item.section.getBoundingClientRect().top - offset <= 0) current = item;
+    });
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) {
+      current = navTargets[navTargets.length - 1];
+    }
+
+    navTargets.forEach(item => item.link.classList.toggle("active", item === current));
   }
 
   /* ---------- Scroll Progress Bar ---------- */
@@ -69,8 +118,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const pct = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
     if (progressBar) progressBar.style.width = pct + "%";
   }
-  window.addEventListener("scroll", updateProgressBar);
-  updateProgressBar();
 
   /* ---------- Custom Cursor ---------- */
   const cursorDot = document.getElementById("cursorDot");
@@ -155,21 +202,22 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 20);
   }
 
-  /* ---------- Tilt Effect on Cards ---------- */
-  const tiltCards = document.querySelectorAll(".review-card");
-  tiltCards.forEach(card => {
-    card.addEventListener("mousemove", (e) => {
-      const rect = card.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      const rotateX = ((y / rect.height) - 0.5) * -10;
-      const rotateY = ((x / rect.width) - 0.5) * 10;
-      card.style.transform = `perspective(700px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-4px)`;
+  /* ---------- Tilt Effect on Cards (pointer devices only) ---------- */
+  if (!isTouch) {
+    document.querySelectorAll(".review-card").forEach(card => {
+      card.addEventListener("mousemove", (e) => {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const rotateX = ((y / rect.height) - 0.5) * -10;
+        const rotateY = ((x / rect.width) - 0.5) * 10;
+        card.style.transform = `perspective(700px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-4px)`;
+      });
+      card.addEventListener("mouseleave", () => {
+        card.style.transform = "perspective(700px) rotateX(0) rotateY(0) translateY(0)";
+      });
     });
-    card.addEventListener("mouseleave", () => {
-      card.style.transform = "perspective(700px) rotateX(0) rotateY(0) translateY(0)";
-    });
-  });
+  }
 
   /* ---------- Team Panel Expand on Click ---------- */
   const teamPanels = document.querySelectorAll(".team-panel");
@@ -180,32 +228,47 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  /* ---------- Magnetic Buttons ---------- */
-  const magneticButtons = document.querySelectorAll(".btn");
-  magneticButtons.forEach(btn => {
-    btn.addEventListener("mousemove", (e) => {
-      const rect = btn.getBoundingClientRect();
-      const x = e.clientX - rect.left - rect.width / 2;
-      const y = e.clientY - rect.top - rect.height / 2;
-      btn.style.transform = `translate(${x * 0.15}px, ${y * 0.25}px)`;
+  /* ---------- Magnetic Buttons (pointer devices only) ---------- */
+  if (!isTouch) {
+    document.querySelectorAll(".btn").forEach(btn => {
+      btn.addEventListener("mousemove", (e) => {
+        const rect = btn.getBoundingClientRect();
+        const x = e.clientX - rect.left - rect.width / 2;
+        const y = e.clientY - rect.top - rect.height / 2;
+        btn.style.transform = `translate(${x * 0.15}px, ${y * 0.25}px)`;
+      });
+      btn.addEventListener("mouseleave", () => {
+        btn.style.transform = "translate(0, 0)";
+      });
     });
-    btn.addEventListener("mouseleave", () => {
-      btn.style.transform = "translate(0, 0)";
-    });
-  });
+  }
 
-  /* ---------- Hero Image Parallax on Mouse Move ---------- */
-  const heroImage = document.querySelector(".hero-image-frame");
+  /* ---------- Hero logo: monogram fallback when logo.png is unavailable ---------- */
+  const heroFrame = document.getElementById("heroFrame");
+  const heroLogo = heroFrame && heroFrame.querySelector(".hero-brand-logo");
+  if (heroFrame && heroLogo) {
+    const markMissing = () => heroFrame.classList.add("logo-missing");
+    heroLogo.addEventListener("error", markMissing);
+    // The request may already have failed before this script ran
+    if (heroLogo.complete && heroLogo.naturalWidth === 0) markMissing();
+  }
+
+  /* ---------- Hero Image Parallax on Mouse Move ----------
+     Applied to the .hero-image wrapper, not the frame: the frame runs the
+     floatImg keyframes, and a CSS animation outranks an inline transform. */
+  const heroParallax = document.querySelector(".hero-image");
   const heroSection = document.querySelector(".hero");
-  if (heroImage && heroSection) {
+  const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  if (heroParallax && heroSection && !isTouch && !prefersReducedMotion) {
     heroSection.addEventListener("mousemove", (e) => {
       const rect = heroSection.getBoundingClientRect();
       const x = (e.clientX - rect.left) / rect.width - 0.5;
       const y = (e.clientY - rect.top) / rect.height - 0.5;
-      heroImage.style.transform = `translate(${x * 20}px, ${y * 20}px)`;
+      heroParallax.style.transform = `translate(${x * 20}px, ${y * 20}px)`;
     });
     heroSection.addEventListener("mouseleave", () => {
-      heroImage.style.transform = "translate(0, 0)";
+      heroParallax.style.transform = "translate(0, 0)";
     });
   }
 
@@ -246,16 +309,34 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /* ---------- Back to Top ---------- */
   const backToTop = document.getElementById("backToTop");
-  window.addEventListener("scroll", () => {
-    if (window.scrollY > 500) {
-      backToTop.classList.add("show");
-    } else {
-      backToTop.classList.remove("show");
-    }
-  });
-  backToTop.addEventListener("click", () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  });
+
+  function updateBackToTop() {
+    if (backToTop) backToTop.classList.toggle("show", window.scrollY > 500);
+  }
+
+  if (backToTop) {
+    backToTop.addEventListener("click", () => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  }
+
+  /* ---------- One rAF-throttled scroll pass ----------
+     Progress bar, back-to-top and nav highlighting share a single listener so
+     scrolling stays smooth on low-powered phones. */
+  let scrollTicking = false;
+  function onScroll() {
+    if (scrollTicking) return;
+    scrollTicking = true;
+    requestAnimationFrame(() => {
+      updateProgressBar();
+      updateBackToTop();
+      syncActiveNav();
+      scrollTicking = false;
+    });
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", onScroll, { passive: true });
+  onScroll();
 
   /* ---------- Contact Form (Demo Handler) ---------- */
   const contactForm = document.getElementById("contactForm");
@@ -273,7 +354,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  contactForm.addEventListener("submit", (e) => {
+  if (contactForm) contactForm.addEventListener("submit", (e) => {
     e.preventDefault();
 
     const name = contactForm.name.value.trim();
