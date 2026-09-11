@@ -232,46 +232,7 @@
   
   /* =============== HERO =============== */
 
-/* =========================================================
-   HERO BRAND LOGO DISPLAY FIX (Designer Galaxy)
-   ========================================================= */
 
-/* Locks the frame into a proportional container */
-.hero-image-frame.hero-logo-container {
-  aspect-ratio: 7 / 6;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 40px;
-  background: #ffffff; /* Clean white card surface so CMYK wheel colors pop */
-  box-shadow: 0 20px 50px rgba(16, 34, 42, 0.08);
-  border: 1px solid var(--border);
-}
-
-/* Constrains logo image without stretching or overflow */
-.hero-brand-logo {
-  max-width: 85%;
-  max-height: 85%;
-  width: auto;
-  height: auto;
-  object-fit: contain;
-  margin: 0 auto;
-  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.06));
-}
-
-/* Tablet & Mobile responsive adjustments */
-@media (max-width: 900px) {
-  .hero-image-frame.hero-logo-container {
-    aspect-ratio: 16 / 9;
-    padding: 24px;
-  }
-  
-  .hero-brand-logo {
-    max-width: 90%;
-    max-height: 90%;
-  }
-}
   .logo {
     font-family: var(--font-heading);
     font-weight: 800;
@@ -335,12 +296,12 @@
     overflow: hidden;
     background: linear-gradient(135deg,
       rgba(176, 224, 230, 0.9) 0%,
-      rgba(170, 240, 209, 0.75) 45%,
+      rgba(176, 224, 230, 0.9) 45%,
       rgba(115, 169, 194, 0.55) 100%);
     background-size: 220% 220%;
     animation: bandDrift 20s ease-in-out infinite;
   }
-  .hero-image-frame img { width: 100%; height: auto; display: block; object-fit: cover; }
+  .hero-image-frame img { width: 867% ; height: 490% ; display: block; object-fit: cover; }
   .hero-image-frame::before,
   .hero-image-frame::after,
   .hero-image-frame span::before,
@@ -1177,13 +1138,6 @@
   @media (max-width: 768px) {
     section { padding: 70px 0; }
   
-    .sidebar { width: 64px; padding-top: 20px; }
-    .sidebar.open {
-      width: 240px;
-      position: fixed;
-      box-shadow: 8px 0 40px rgba(0,0,0,0.18);
-    }
-    main, footer { margin-left: 64px; }
     .hero { padding-top: 40px; }
   
     .hero-grid { grid-template-columns: 1fr; min-height: auto; gap: 32px; }
@@ -1247,7 +1201,6 @@
     .contact-form input, .contact-form textarea { padding: 14px; font-size: 14px; }
   
     .logo { font-size: 17px; }
-    .sidebar { width: 85vw; }
     .sidebar-logo-img { width: 38px; height: 38px; }
   
     .footer-grid { text-align: center; }
@@ -1267,6 +1220,157 @@
     .service-row, .review-card { transform: none !important; }
     .btn { transform: none !important; }
   }
+
+/* =========================================================
+   MOBILE SIDEBAR — OFF CANVAS NAVIGATION
+   ========================================================= */
+
+@media (max-width: 768px) {
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+
+    width: 64px;
+    max-width: 64px;
+
+    padding-top: 20px;
+
+    overflow: visible;
+
+    z-index: 1050;
+
+    transition:
+      width 0.4s cubic-bezier(.4, 0, .2, 1),
+      max-width 0.4s cubic-bezier(.4, 0, .2, 1),
+      box-shadow 0.4s ease;
+  }
+
+  .sidebar.open {
+    width: min(280px, 82vw);
+    max-width: 280px;
+
+    align-items: stretch;
+
+    box-shadow: 8px 0 40px rgba(0, 0, 0, 0.18);
+  }
+
+  main,
+  footer {
+    margin-left: 0;
+  }
+
+  .sidebar.open ~ main,
+  .sidebar.open ~ footer {
+    margin-left: 0;
+  }
+
+  .sidebar-logo-wrap {
+    padding: 0 13px 22px;
+    justify-content: center;
+  }
+
+  .sidebar.open .sidebar-logo-wrap {
+    justify-content: flex-start;
+    padding-left: 20px;
+  }
+
+  .sidebar-logo-img {
+    width: 38px;
+    height: 38px;
+  }
+
+  .sidebar-nav {
+    gap: 24px;
+    padding-top: 6px;
+  }
+
+  .sidebar-nav a {
+    padding: 0 22px;
+    gap: 14px;
+  }
+
+  .nav-label {
+    opacity: 0;
+    transform: translateX(-8px);
+    pointer-events: none;
+    white-space: nowrap;
+  }
+
+  .sidebar.open .nav-label {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
+  }
+
+  .sidebar-bottom {
+    padding-top: 20px;
+    padding-bottom: 14px;
+  }
+
+  .sidebar.open .sidebar-bottom {
+    align-items: flex-start;
+    padding-left: 22px;
+  }
+
+  .sidebar-location {
+    font-size: 10px;
+  }
+
+  .sidebar.open .sidebar-location {
+    font-size: 11px;
+    white-space: normal;
+  }
+
+  .sidebar-overlay {
+    z-index: 1040;
+  }
+
+  .sidebar-overlay.show {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+@media (max-width: 480px) {
+
+  .sidebar {
+    width: 60px;
+    max-width: 60px;
+  }
+
+  .sidebar.open {
+    width: min(280px, 84vw);
+    max-width: 280px;
+  }
+
+  main,
+  footer,
+  .sidebar.open ~ main,
+  .sidebar.open ~ footer {
+    margin-left: 0;
+  }
+
+  .sidebar-nav {
+    gap: 22px;
+  }
+
+  .sidebar-nav a {
+    padding-left: 19px;
+    padding-right: 19px;
+  }
+
+  .sidebar-logo-wrap {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .sidebar.open .sidebar-logo-wrap {
+    padding-left: 20px;
+  }
+}
   
   /* ---- Landscape phones (short viewport height) ---- */
   @media (max-height: 480px) and (orientation: landscape) {
@@ -1274,4 +1378,103 @@
     .hero-grid { min-height: auto; }
     section { padding: 50px 0; }
   }
+
+/* =========================================================
+   STATS / PRESS STATUS — MATCH CLIENTS SECTION
+   ========================================================= */
+
+/* Keep the stats strip visually connected to Section 06 */
+.stats {
+  position: relative;
+  padding: 60px 0;
+  border-top: 0;
+  border-bottom: 0;
+
+  background: linear-gradient(
+    165deg,
+    rgba(176, 224, 230, 0.42) 0%,
+    rgba(245, 245, 245, 0.50) 34%,
+    rgba(115, 169, 194, 0.26) 62%,
+    rgba(170, 240, 209, 0.34) 100%
+  );
+
+  background-size: 280% 280%;
+  animation: bandDrift 26s ease-in-out infinite;
+}
+
+/* Remove the "card" feeling from the live status */
+.stats .stat-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0 0 30px;
+  border-left: 1px solid rgba(54, 117, 136, 0.16);
+}
+
+/* Completely transparent — no pill/card background */
+.stats .status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+
+  background: transparent;
+  box-shadow: none;
+
+  animation: none;
+}
+
+/* Small live indicator */
+.stats .status-pill .status-dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+
+  border-radius: 50%;
+  background: var(--accent);
+
+  animation: statusPulse 1.8s ease-in-out infinite;
+}
+
+/* Status text becomes part of the section */
+.stats .status-pill .status-text {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  color: var(--teal-deep);
+  white-space: nowrap;
+}
+
+/* Keep the statistic dividers subtle */
+.stats .stat-item + .stat-item {
+  border-left: 1px solid rgba(54, 117, 136, 0.16);
+}
+
+/* Remove divider before status on smaller layouts */
+@media (max-width: 1024px) {
+  .stats .stat-status {
+    border-left: 0;
+    padding-left: 0;
+  }
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+  .stats {
+    padding: 45px 0;
+  }
+
+  .stats .stat-status {
+    margin-top: 8px;
+  }
+
+  .stats .status-pill .status-text {
+    font-size: 10px;
+    letter-spacing: 1.4px;
+  }
+}
   
